@@ -10,18 +10,16 @@ public class CarData {
     //car name
     public string description = "this is temp car";
     //car description
-    public string version = "0.0.6";
+    public string version = "0.0.1";
     //just a version number
     public float weight = 100;
-    //cor mass. dont forget wheels also have mass.
-    public Vector3 centerOfGravy = new Vector3(0, 0.2f, 0);
-    //cog setup. unity fucks about with this, so depite placing it where you want it, the position is arbitrary 
+    //cor mass. dont forget wheels also have mass. (CURRENTLY WHEELS DO NOT HAVE MASS)
 
     //aero
     public float aero = 5f;
     //aero push down force
     public float dragCoef = 0.06f;
-    //max rigidbody.drag value.-drag reaches this value at some 150mph or sth
+    //rigidbody drag value
     //this also affects stability in high speeds. higher value = more stable
 
     //engine
@@ -31,6 +29,10 @@ public class CarData {
     //engine redline
     public AnimationCurve engineTorque = new AnimationCurve(new Keyframe(0, 130), new Keyframe(5000, 250), new Keyframe(9000, 200));
     //engine power
+    public float engineInertia = 0.2f;
+    //how reactive is the motor to throttle input and power
+    public AnimationCurve engineDecelMap = new AnimationCurve(new Keyframe(0, 130), new Keyframe(5000, 250), new Keyframe(9000, 200));
+    //used for engine braking and engine rpm count down
 
     //diff & tranny
     public float frontWheelDriveBias = 0.5f;
@@ -40,9 +42,9 @@ public class CarData {
     public float[] gears = new float[8] { -5.0f, 0.0f, 5.4f, 3.4f, 2.7f, 2.0f, 1.8f, 1.6f };
     //gears
     public float shifterDelay = 0.3f;
-    //auto and manual shifter delay time
+    //auto and manual shifter delay time in seconds
     public float maxSteerAngle = 20;
-    //steering lock
+    //steering lock in degrees
     public float lsd = 1f;
     //an arbitrary threshold between wheels on an axle. 0 = open diff
 

@@ -6,7 +6,7 @@ public class CarBehaviour : MonoBehaviour
 {
     Rigidbody CarRigidbody;
 
-    //public CarData carData;
+    public CarData specs;
 
     public float airspeedKM;
     public float engineRPM;
@@ -49,7 +49,7 @@ public class CarBehaviour : MonoBehaviour
 
         //airspeed kmh
         airspeedKM = CarRigidbody.velocity.magnitude * 3.6f;
-
+        EngineBehavior();
 
 
         
@@ -66,9 +66,19 @@ public class CarBehaviour : MonoBehaviour
 
     void EngineBehavior()
     {
+        if (Input.GetKey("i") && engineRPM < specs.engineREDLINE)
+        {
+            engineRPM += (specs.engineTorque.Evaluate(engineRPM) / specs.engineInertia) * Time.fixedDeltaTime;
+        }
+        else
+        {
+            engineRPM -= (specs.engineDecelMap.Evaluate(engineRPM) / specs.engineInertia) * Time.fixedDeltaTime;
 
-
-
+        }
+        if (engineRPM < specs.engineIdle)
+        {
+            engineRPM = specs.engineIdle;
+        }
 
     }
     
