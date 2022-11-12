@@ -4,16 +4,33 @@ using UnityEngine.UI;
 
 public class CarBehaviour : MonoBehaviour
 {
-    Rigidbody CarRigidbody;
-
+    //adjustable params
     public CarData specs;
 
+    //car status data
+    Rigidbody CarRigidbody;
     public float airspeedKM;
+
+    //motor status data
+    public float currentTorqueOut;//i presume this is in nm? yeap..yet another arbitrary value...
+    public float currentHorsepowerOut;//caluclate from torks
     public float engineRPM;
+    public float drivetrainRPM;//target RPM for wheels
+    public int gear;
+    
     public float debugValue1;
     public float debugValue2;
     public float debugValue3;
     public TireBehavior[] wheels;
+
+    //inputs
+    public float steeringInput;
+    public float throttleInput;
+    public float brakeInput;
+    public float clutchInput;
+    public int shiftInput;
+    public bool shifting;
+
 
     void Start()
     {
@@ -30,58 +47,89 @@ public class CarBehaviour : MonoBehaviour
 
     void FixedUpdate()
     {
-        //go through every wheel n calculate spring
-        foreach(TireBehavior ww in wheels)
-        {
-            ww.SpringBehavior();
-        }
-        
-        if (Input.GetKey("n"))
-        {
-            wheels[2].motorTorque = 5;
-            wheels[3].motorTorque = 5;
-        }
-        else
-        {
-            wheels[2].motorTorque = 0;
-            wheels[3].motorTorque = 0;
-        }
-
+        CollectInputs();
         //airspeed kmh
         airspeedKM = CarRigidbody.velocity.magnitude * 3.6f;
-        EngineBehavior();
+        currentHorsepowerOut = (currentTorqueOut * engineRPM) / 7127;
 
 
-        
-    }
-
-    void Update()
-    {
-
-
-
-    }
-
-
-
-    void EngineBehavior()
-    {
-        if (Input.GetKey("i") && engineRPM < specs.engineREDLINE)
+        currentTorqueOut = EngineBehavior();
+        drivetrainRPM = engineRPM * (specs.finalDrive * specs.gears[gear]);
+        foreach (TireBehavior e in wheels)
         {
+            e.TorqueForce(engineRPM / (specs.finalDrive * specs.gears[2]), currentTorqueOut);
+        }
+
+
+
+
+
+    }
+
+    //make inputs into a function so to make future whatever multi input
+    //support easier to implement..
+    //and if you want to give FFB a go, this would likely be the place
+    //to cram that code into.
+    void CollectInputs()
+    {
+        throttleInput = Input.GetAxis("Throttle");
+        brakeInput = Input.GetAxis("Brake");
+        steeringInput = Input.GetAxis("Steering");
+        clutchInput = Input.GetAxis("Clutch");
+
+        //gears - currently only paddles.
+        //adding shifter code should be simple enough later on
+        //handle the actual gear variable change in the gearbox itself
+        if (Input.GetAxis("ShiftUp") == 1 && !shifting)
+        {
+            shifting = true;
+            shiftInput = 1;
+        }
+        if (Input.GetAxis("ShiftDown") == 1 && !shifting)
+        {
+            shifting = true;
+            shiftInput = -1;
+        }
+    }
+
+
+    //take user input and increase/decrease engine rpm
+    float EngineBehavior()
+    {
+            //throttle
+            engineRPM += throttleInput * (specs.engineTorque.Evaluate(engineRPM) / specs.engineInertia) * Time.fixedDeltaTime;
+            engineRPM -= (1 - throttleInput) * specs.engineDecelMap.Evaluate(engineRPM) / specs.engineInertia * Time.fixedDeltaTime;
+            return (specs.engineTorque.Evaluate(engineRPM) * throttleInput) - (specs.engineDecelMap.Evaluate(engineRPM) * (1 - throttleInput));
+        if(engineRPM < specs.engineIdle)
+        {
+            //idle
             engineRPM += (specs.engineTorque.Evaluate(engineRPM) / specs.engineInertia) * Time.fixedDeltaTime;
+            return specs.engineTorque.Evaluate(engineRPM) * 0.2f;
         }
-        else
-        {
-            engineRPM -= (specs.engineDecelMap.Evaluate(engineRPM) / specs.engineInertia) * Time.fixedDeltaTime;
+        return 0;
 
-        }
-        if (engineRPM < specs.engineIdle)
+    }
+
+    void Gearbox()
+    {
+        if(shiftInput > 0 && shifting)
         {
-            engineRPM = specs.engineIdle;
+            gear += shiftInput;
+            shiftInput = 0;
+            StartCoroutine(ShifterDelay());
+        }
+        if (shiftInput < 0 && shifting)
+        {
+            gear += shiftInput;
+            shiftInput = 0;
+            StartCoroutine(ShifterDelay());
         }
 
     }
-    
-
+    IEnumerator ShifterDelay()
+    {
+        yield return new WaitForSeconds(specs.shifterDelay);
+        shifting = false;
+    }
 
 }

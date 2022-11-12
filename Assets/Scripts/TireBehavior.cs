@@ -17,12 +17,18 @@ public class TireBehavior : MonoBehaviour
     public float dampReboundRate = 20;
     public float brakeStrength = 10;
     public float maxSteerLock = 20;
+    public float wheelInertia = 0.7f;
+
+
+    //tire
+    public float fz0 = 100f;
 
     //readonly go below
     public bool isGrounded;//dolor
-    public float wheelMomentum;//current wheel momentum in ??? units
+    public float wheelRelaxedRPM;//wheel's "natural" RPM, use this to calculate slip ratio later
     public float wheelRPM;//current wheel RPM
-    public float motorTorque = 0;//current torque applied to the wheel, dictated by carbehavior
+    public float wheelRADs;//current wheel RAD/sec
+    public float slipRatio;
     public float travelSpeed;//how fast is spring moving in arbitrary units
     public Vector3 springForceVector;//how much spring force including damper in a vector
     public float springDisplacement = 0;//1-bottom out 0-fully extended
@@ -42,19 +48,17 @@ public class TireBehavior : MonoBehaviour
         graphicsPos += gameObject.transform.forward.normalized * ((travelRange * (1 - springDisplacement)) - wheelRadius);
         GraphicalWheel.transform.position = graphicsPos;
         GraphicalWheel.transform.localEulerAngles = new Vector3(GraphicalWheel.transform.localEulerAngles.x, steerAngle - GraphicalWheel.transform.localEulerAngles.z, GraphicalWheel.transform.localEulerAngles.z);
-        GraphicalWheel.transform.Rotate(wheelRPM / 60 * 360 * Time.deltaTime, 0, 0);
+        GraphicalWheel.transform.Rotate(wheelRADs * 360 * Time.deltaTime, 0, 0);
     }
 
     private void FixedUpdate()
     {
-        if (isGrounded)
-        {
-            MotorBehavior();
-            BrakeBehavior();
-        }
         Steering();
+        SpringBehavior();
         //wheel rpm
-        wheelRPM = (wheelRadius * 2) * Mathf.PI * Car.velocity.magnitude * 3.6f;
+        wheelRelaxedRPM = (wheelRadius * 2) * Mathf.PI * Car.velocity.magnitude * 3.6f;
+        wheelRADs = wheelRPM / 60 * 2 * Mathf.PI;
+        
     }
 
     Vector3 SpringForce()
@@ -83,15 +87,14 @@ public class TireBehavior : MonoBehaviour
         }
         return springForceVector;
     }
-
-    //this is called from the car fixed update
-    //calculates and applies spring force to car.
-    public void SpringBehavior()
+    
+    //applies spring force to car.
+    void SpringBehavior()
     {
-        Car.AddForceAtPosition(SpringForce(), gameObject.transform.position, ForceMode.Acceleration);
+        Car.AddForceAtPosition(SpringForce(), gameObject.transform.position, ForceMode.Force);
     }
-
-
+    
+    //slow damper calculation
     float SlowDamper()
     {
         //not sure if these was reversed i wrote this at 4am at 3 beers in
@@ -111,48 +114,32 @@ public class TireBehavior : MonoBehaviour
         return 0;
     }
     
-
-    public void MotorBehavior()
+    public void TorqueForce(float engineRPM, float motorTorks)
     {
         //for now just reference cars forward vector for force direction
         //however in the future... if adding geometry deformation,
         //add a script to instantiate a child dummy or something
         //and then calculate its position before taking the forward vector from it
+        wheelRPM = engineRPM;
+        slipRatio = Mathf.Clamp(wheelRPM / wheelRelaxedRPM, -3, 3);
+        
 
-        Vector3 motorForce = ForwardReference.transform.forward.normalized * motorTorque;
-        Car.AddForceAtPosition(motorForce, gameObject.transform.position, ForceMode.Acceleration);
+        if (isGrounded)
+        {
+            TorqueBehavior(motorTorks / slipRatio);
+        }
+    }
 
+    public void TorqueBehavior(float perro)
+    {
+        Vector3 motorForce = ForwardReference.transform.forward.normalized * perro * Time.fixedDeltaTime;
+        Car.AddForceAtPosition(motorForce, gameObject.transform.position, ForceMode.Force);
     }
     
-    public void BrakeBehavior()
-    {
-        //we can just call this form the local fixed update
-        //check if user is braking
-        //and also calculate brake cooling etc...
-
-        if (Input.GetKey("t"))
-        {
-            brakeTorque = brakeStrength;
-            //apply force
-            Vector3 brakeForce = ForwardReference.transform.forward.normalized * -brakeTorque;
-            Car.AddForceAtPosition(brakeForce, gameObject.transform.position, ForceMode.Acceleration);
-        }
-        else
-        {
-            brakeTorque = 0;
-        }
-    }
+    //move this to carbehavior
+    //unless..
     void Steering()
     {
-        if (Input.GetKey("v") && steerAngle < maxSteerLock)
-        {
-            steerAngle += 1;
-
-        }
-        else if (Input.GetKey("b") && steerAngle > -maxSteerLock)
-        {
-            steerAngle -= 1;
-        }
 
     }
 }

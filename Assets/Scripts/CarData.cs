@@ -14,7 +14,7 @@ public class CarData {
     //just a version number
     public float weight = 100;
     //cor mass. dont forget wheels also have mass. (CURRENTLY WHEELS DO NOT HAVE MASS)
-
+    
     //aero
     public float aero = 5f;
     //aero push down force
@@ -35,16 +35,16 @@ public class CarData {
     //used for engine braking and engine rpm count down
 
     //diff & tranny
+    public int gearboxType = 0;
+    //gearbox type: MANUEL + C, MANUEL, SEMI AUTO, AUTO, CVT
     public float frontWheelDriveBias = 0.5f;
     //0 - rear, 1 - front - center diff
-    public float ratio = 4.3f;
+    public float finalDrive = 4.3f;
     //final drive
     public float[] gears = new float[8] { -5.0f, 0.0f, 5.4f, 3.4f, 2.7f, 2.0f, 1.8f, 1.6f };
     //gears
     public float shifterDelay = 0.3f;
     //auto and manual shifter delay time in seconds
-    public float maxSteerAngle = 20;
-    //steering lock in degrees
     public float lsd = 1f;
     //an arbitrary threshold between wheels on an axle. 0 = open diff
 
@@ -56,9 +56,23 @@ public class CarData {
     public float turboSize = 10;
     //mm - adjusts turbo lag
 
+    //wheels and handling bits
+    public float hubMass = 10;
+    //this is NOT reduced from car total mass. this is multiplied per how many wheels you have
+    public float steerWheelRot = 900;
+    //here for possible future wheel support. FULL ROTATION FROM LEFT END TO RIGHT END
+    public float maxSteerAngle = 20;
+    //steering lock in degrees
+    public float ffbMult = 1;
+    //here for possbile future wheel suport.
+    public float brakeStrength = 60;
+    //brake torque in nm
+    public float brakeBias = 0.5f;
+    //brake bias 1=front
 
-        //feed a json in string to this and it returns it as CarData.
-        //used in unpacking data in CarBehaviour.cs
+
+    //feed a json in string to this and it returns it as CarData.
+    //used in unpacking data in CarBehaviour.cs
     public CarData ImportData(string dataAsJson)
     {
         CarData dolor;
