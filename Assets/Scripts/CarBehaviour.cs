@@ -55,13 +55,7 @@ public class CarBehaviour : MonoBehaviour
 
         currentTorqueOut = EngineBehavior();
         drivetrainRPM = engineRPM * (specs.finalDrive * specs.gears[gear]);
-        foreach (TireBehavior e in wheels)
-        {
-            e.TorqueForce(engineRPM / (specs.finalDrive * specs.gears[2]), currentTorqueOut);
-        }
-
-
-
+        
 
 
     }
@@ -96,17 +90,16 @@ public class CarBehaviour : MonoBehaviour
     //take user input and increase/decrease engine rpm
     float EngineBehavior()
     {
-            //throttle
-            engineRPM += throttleInput * (specs.engineTorque.Evaluate(engineRPM) / specs.engineInertia) * Time.fixedDeltaTime;
-            engineRPM -= (1 - throttleInput) * specs.engineDecelMap.Evaluate(engineRPM) / specs.engineInertia * Time.fixedDeltaTime;
-            return (specs.engineTorque.Evaluate(engineRPM) * throttleInput) - (specs.engineDecelMap.Evaluate(engineRPM) * (1 - throttleInput));
-        if(engineRPM < specs.engineIdle)
+        if (engineRPM < specs.engineIdle)
         {
             //idle
             engineRPM += (specs.engineTorque.Evaluate(engineRPM) / specs.engineInertia) * Time.fixedDeltaTime;
             return specs.engineTorque.Evaluate(engineRPM) * 0.2f;
         }
-        return 0;
+        //throttle
+        engineRPM += throttleInput * (specs.engineTorque.Evaluate(engineRPM) / specs.engineInertia) * Time.fixedDeltaTime;
+        engineRPM -= (1 - throttleInput) * specs.engineDecelMap.Evaluate(engineRPM) * 10 / specs.engineInertia * Time.fixedDeltaTime;
+        return (specs.engineTorque.Evaluate(engineRPM) * throttleInput) - (specs.engineDecelMap.Evaluate(engineRPM) * (1 - throttleInput));
 
     }
 

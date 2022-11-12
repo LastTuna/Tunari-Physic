@@ -530,11 +530,12 @@ MonoBehaviour:
   brakeStrength: 10
   maxSteerLock: 0
   wheelInertia: 0.7
+  fz0: 100
   isGrounded: 0
   wheelRelaxedRPM: 0
   wheelRPM: 0
   wheelRADs: 0
-  inputTorque: 0
+  slipRatio: 0
   travelSpeed: 0
   springForceVector: {x: 0, y: 0, z: 0}
   springDisplacement: 0
@@ -588,11 +589,12 @@ MonoBehaviour:
   brakeStrength: 10
   maxSteerLock: 0
   wheelInertia: 0.7
+  fz0: 100
   isGrounded: 0
   wheelRelaxedRPM: 0
   wheelRPM: 0
   wheelRADs: 0
-  inputTorque: 0
+  slipRatio: 0
   travelSpeed: 0
   springForceVector: {x: 0, y: 0, z: 0}
   springDisplacement: 0
@@ -727,28 +729,23 @@ MonoBehaviour:
       serializedVersion: 2
       m_Curve:
       - serializedVersion: 2
-        time: 0
-        value: 130
+        time: -135.65283
+        value: 2.1810532
         inSlope: 0
         outSlope: 0
         tangentMode: 0
       - serializedVersion: 2
-        time: 5000
-        value: 250
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-      - serializedVersion: 2
-        time: 9000
-        value: 200
-        inSlope: 0
-        outSlope: 0
+        time: 11098.478
+        value: 47.3791
+        inSlope: 0.005176796
+        outSlope: 0.005176796
         tangentMode: 0
       m_PreInfinity: 2
       m_PostInfinity: 2
-      m_RotationOrder: 4
+      m_RotationOrder: 0
+    gearboxType: 0
     frontWheelDriveBias: 0.5
-    ratio: 4.3
+    finalDrive: 4.3
     gears:
     - -5
     - 0
@@ -759,7 +756,6 @@ MonoBehaviour:
     - 1.8
     - 1.6
     shifterDelay: 0.3
-    maxSteerAngle: 20
     lsd: 1
     aspirated: 0
     turboWaste:
@@ -787,14 +783,28 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
     turboSize: 10
+    hubMass: 10
+    steerWheelRot: 900
+    maxSteerAngle: 20
+    ffbMult: 1
+    brakeStrength: 60
+    brakeBias: 0.5
+  airspeedKM: 0
   currentTorqueOut: 0
   currentHorsepowerOut: 0
-  airspeedKM: 0
   engineRPM: 0
+  drivetrainRPM: 0
+  gear: 0
   debugValue1: 0
   debugValue2: 0
   debugValue3: 0
   wheels: []
+  steeringInput: 0
+  throttleInput: 0
+  brakeInput: 0
+  clutchInput: 0
+  shiftInput: 0
+  shifting: 0
 --- !u!54 &831687032
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -894,11 +904,12 @@ MonoBehaviour:
   brakeStrength: 10
   maxSteerLock: 20
   wheelInertia: 0.7
+  fz0: 100
   isGrounded: 0
   wheelRelaxedRPM: 0
   wheelRPM: 0
   wheelRADs: 0
-  inputTorque: 0
+  slipRatio: 0
   travelSpeed: 0
   springForceVector: {x: 0, y: 0, z: 0}
   springDisplacement: 0
@@ -1610,11 +1621,12 @@ MonoBehaviour:
   brakeStrength: 10
   maxSteerLock: 20
   wheelInertia: 0.7
+  fz0: 100
   isGrounded: 0
   wheelRelaxedRPM: 0
   wheelRPM: 0
   wheelRADs: 0
-  inputTorque: 0
+  slipRatio: 0
   travelSpeed: 0
   springForceVector: {x: 0, y: 0, z: 0}
   springDisplacement: 0
