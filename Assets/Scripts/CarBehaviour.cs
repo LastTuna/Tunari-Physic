@@ -55,8 +55,15 @@ public class CarBehaviour : MonoBehaviour
 
         currentTorqueOut = EngineBehavior();
         drivetrainRPM = engineRPM * (specs.finalDrive * specs.gears[gear]);
-        
 
+        if (Input.GetKey("t"))
+        {
+            CarRigidbody.AddForceAtPosition(gameObject.transform.forward * 300, gameObject.transform.position, ForceMode.Force);
+        }
+        if (Input.GetKey("n"))
+        {
+            CarRigidbody.AddForceAtPosition(-gameObject.transform.forward * 300, gameObject.transform.position, ForceMode.Force);
+        }
 
     }
 

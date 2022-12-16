@@ -8,7 +8,7 @@ public class TireBehavior : MonoBehaviour
     GameObject ForwardReference;//this dummy is for the forward vector reference
     //i dont know if this is useful, at least yet, but maybe in the future if i implement suspension geo
     Rigidbody Car;
-    public TireData jamal;
+    public TireData tireData;
     public string wheelName = "WHEEL_";
     public float wheelRadius = 0.33f;//NOT diameter
 
@@ -22,7 +22,6 @@ public class TireBehavior : MonoBehaviour
 
 
     //tire
-    public float fz0 = 100f;
     public float debugv1;
 
     //readonly go below
@@ -36,10 +35,12 @@ public class TireBehavior : MonoBehaviour
     public float springDisplacement = 0;//1-bottom out 0-fully extended
     public float brakeTorque = 0;
     float steerAngle = 0;
+    float lateralDirection = 0;//0-forward 1-reverse
+    public Vector3 longtitudionalVelocity;
 
     private void Start()
     {
-        jamal = new TireData();
+        tireData = new TireData();
         GraphicalWheel = GameObject.Find(wheelName);
         Car = gameObject.GetComponentInParent<Rigidbody>();
         ForwardReference = Instantiate(new GameObject(), gameObject.transform.position, new Quaternion(0,0,0,1), Car.gameObject.transform);
@@ -56,13 +57,35 @@ public class TireBehavior : MonoBehaviour
 
     private void FixedUpdate()
     {
+        CalculateRelaxedRPM();
         SpringBehavior();
-        //wheel rpm
-        wheelRelaxedRPM = (wheelRadius * 2) * Mathf.PI * Car.velocity.magnitude * 3.6f;
-        wheelRADs = wheelRPM / 60 * 2 * Mathf.PI;
-        slipRatio = Mathf.Clamp(wheelRPM / wheelRelaxedRPM - 1, 0, 100);
-
         LongtitudionalGrip();
+    }
+
+    void CalculateRelaxedRPM()
+    {
+        //no point in calculating this if the wheel is not in contact with ground i suppose
+        if (isGrounded)
+        {
+            //calculate the tire target rpm but first you have to make sure the lateral velocity does not account for the target wheel speed
+            //because, say youre sliding sideways, the wheel longtitudional target speed would be much less because the wheel is travelling at an angle
+            longtitudionalVelocity = Vector3.Scale(Car.velocity, Car.transform.forward);
+            wheelRelaxedRPM = (wheelRadius * 2) * Mathf.PI * longtitudionalVelocity.magnitude * 3.6f;
+            wheelRADs = wheelRPM / 60 * 2 * Mathf.PI;
+            if (Vector3.Angle(Car.velocity, Car.transform.forward) > 90)
+            {
+                lateralDirection = 1;
+                wheelRelaxedRPM = wheelRelaxedRPM * -1;
+                //assign sign to relaxed rpm so it can be used for reverse
+            }
+            else
+            {
+                lateralDirection = 0;
+            }
+        //calculate the slip ratio
+        slipRatio = wheelRPM - wheelRelaxedRPM;
+        }
+
     }
 
     Vector3 SpringForce()
@@ -79,9 +102,11 @@ public class TireBehavior : MonoBehaviour
             float totalForce = springDisplacement * springRate * Time.fixedDeltaTime;
             totalForce += SlowDamper();
             springForceVector = -gameObject.transform.forward.normalized * totalForce;
+
         }
         else
         {
+            slipRatio = 0;
             isGrounded = false;
             //raycast didnt hit nothing so safe to say its voided
             travelSpeed = 0;
@@ -120,58 +145,29 @@ public class TireBehavior : MonoBehaviour
 
     void LongtitudionalGrip()
     {
-        //i dont know why what or how everything works
-        //presumably i need to make fz0 the current tire load
-        //in newtons.. that means calculating the current weight load
-        //and also the rotational force load? i dont know
-        debugv1 = jamal.LongtitudionalForce(fz0, slipRatio);
-
+        //just move the isGrounded check somewhere else later
+        if (isGrounded)
+        {
+            if (debugv1 == 0)
+            {
+                Car.AddForceAtPosition(gameObject.transform.up.normalized * tireData.longtitudionalGrip.Evaluate(slipRatio) * tireData.gripFactor, gameObject.transform.position, ForceMode.Force);
+            }
+            else
+            {
+                Car.AddForceAtPosition(gameObject.transform.up.normalized * tireData.longtitudionalGrip.Evaluate(slipRatio) * tireData.gripFactor, gameObject.transform.position, ForceMode.Force);
+            }
+        }
     }
-    
 
 }
 
 [System.Serializable]
 public class TireData
 {
-    //honestly i doubt i need this at all ill just rip something out of my ass
-    //because i dont understand none of this, let alone how to apply
-    //these forces to the physics engine
-    //this does not include lateral force..this is only longtitudional so far
-    //the reference i used https://www.edy.es/dev/docs/pacejka-94-parameters-explained-a-comprehensive-guide/
-    public float b0 = 1.5f; //shape factor
-    public float b1 = 0; //Load influence on longitudinal friction coefficient
-    public float b2 = 1100; //Longitudinal friction coefficient
-    public float b3 = 0; //Curvature factor of stiffness/load
-    public float b4 = 300; //Change of stiffness with slip
-    public float b5 = 1f; //Change of progressivity of stiffness/load
-    public float b6 = 0; //Curvature change with load^2
-    public float b7 = 0; //Curvature change with load
-    public float b8 = -2; //Curvature factor
-    public float b9 = 0; //Load influence on horizontal shift
-    public float b10 = 0; //Horizontal shift
-    public float b11 = 0; //Vertical shift
-    public float b12 = 0; //Vertical shift at load
-    public float b13 = 0f; //Curvature shift
-    
+    public float gripFactor = 2000;
+    public float maxSlip = 150f;//how much slip is allowed till it caps out
+    public AnimationCurve longtitudionalGrip = new AnimationCurve(new Keyframe(-110, -0.2f), new Keyframe(-70, -1), new Keyframe(0, 0), new Keyframe(70, 1), new Keyframe(110, 0.2f));
+    public AnimationCurve lateralGrip = new AnimationCurve(new Keyframe(0, 0), new Keyframe(70, 50), new Keyframe(110, 20));
 
-    //i am certain that a lot of this maths can be simplified
-    //unfortunately for you and me i literaly cant maths even if i tried
-    //so get bent
-    public float LongtitudionalForce(float fz, float slipratio)
-    {
-        //precalculate watever these are
-        float c = b0;
-        float d = fz * (b1 * fz + b2);
-        float h = b9 * fz + b10;
-        float e = (b6 * (fz * fz) + b7 * fz + b8) * (1 - b13 * Mathf.Sign(slipratio + h));
-        float bcd = (b3 * (fz * fz) + b4 * fz) * e * ((-b5 * fz) * (-b5 * fz));//missing e^(-b5*fz). no idea what e is.
-        float b = bcd / (c * d);
-        float v = b11 * fz + b12;
-        float bx1 = b * (slipratio + h);
-        return d * Mathf.Sin(c * Mathf.Atan(bx1 - e * (bx1 - Mathf.Atan(bx1)))) + v;
-
-
-    }
 
 }

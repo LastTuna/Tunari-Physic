@@ -521,6 +521,57 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b5eacf3c359ab4428de9973486b9911, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  jamal:
+    gripFactor: 2000
+    maxSlip: 150
+    longtitudionalGrip:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 2
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      - serializedVersion: 2
+        time: 29.704834
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      - serializedVersion: 2
+        time: 110
+        value: 0.2
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 0
+    lateralGrip:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 2
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      - serializedVersion: 2
+        time: 70
+        value: 50
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      - serializedVersion: 2
+        time: 110
+        value: 20
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   wheelName: WheelLR
   wheelRadius: 0.165
   travelRange: 0.4
@@ -531,6 +582,7 @@ MonoBehaviour:
   maxSteerLock: 0
   wheelInertia: 0.7
   fz0: 100
+  debugv1: 0
   isGrounded: 0
   wheelRelaxedRPM: 0
   wheelRPM: 0
@@ -580,6 +632,57 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b5eacf3c359ab4428de9973486b9911, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  jamal:
+    gripFactor: 2000
+    maxSlip: 150
+    longtitudionalGrip:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 2
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      - serializedVersion: 2
+        time: 29.704834
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      - serializedVersion: 2
+        time: 110
+        value: 0.2
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 0
+    lateralGrip:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 2
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      - serializedVersion: 2
+        time: 70
+        value: 50
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      - serializedVersion: 2
+        time: 110
+        value: 20
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   wheelName: WheelRR
   wheelRadius: 0.165
   travelRange: 0.4
@@ -590,6 +693,7 @@ MonoBehaviour:
   maxSteerLock: 0
   wheelInertia: 0.7
   fz0: 100
+  debugv1: 0
   isGrounded: 0
   wheelRelaxedRPM: 0
   wheelRPM: 0
@@ -895,6 +999,57 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b5eacf3c359ab4428de9973486b9911, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  jamal:
+    gripFactor: 2000
+    maxSlip: 150
+    longtitudionalGrip:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 2
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      - serializedVersion: 2
+        time: 29.704834
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      - serializedVersion: 2
+        time: 110
+        value: 0.2
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 0
+    lateralGrip:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 2
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      - serializedVersion: 2
+        time: 70
+        value: 50
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      - serializedVersion: 2
+        time: 110
+        value: 20
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   wheelName: WheelLF
   wheelRadius: 0.165
   travelRange: 0.4
@@ -905,6 +1060,7 @@ MonoBehaviour:
   maxSteerLock: 20
   wheelInertia: 0.7
   fz0: 100
+  debugv1: 0
   isGrounded: 0
   wheelRelaxedRPM: 0
   wheelRPM: 0
@@ -1612,6 +1768,57 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b5eacf3c359ab4428de9973486b9911, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  jamal:
+    gripFactor: 2000
+    maxSlip: 150
+    longtitudionalGrip:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 2
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      - serializedVersion: 2
+        time: 29.704834
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      - serializedVersion: 2
+        time: 110
+        value: 0.2
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 0
+    lateralGrip:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 2
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      - serializedVersion: 2
+        time: 70
+        value: 50
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      - serializedVersion: 2
+        time: 110
+        value: 20
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
   wheelName: WheelRF
   wheelRadius: 0.165
   travelRange: 0.4
@@ -1622,6 +1829,7 @@ MonoBehaviour:
   maxSteerLock: 20
   wheelInertia: 0.7
   fz0: 100
+  debugv1: 0
   isGrounded: 0
   wheelRelaxedRPM: 0
   wheelRPM: 0
