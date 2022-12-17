@@ -29,14 +29,15 @@ public class TireBehavior : MonoBehaviour
     public float wheelRelaxedRPM;//wheel's "natural" RPM, use this to calculate slip ratio later
     public float wheelRPM;//current wheel RPM
     public float wheelRADs;//current wheel RAD/sec
-    public float slipRatio;
+    public float longtitudionalSlipRatio;
+    public float lateralSlipRatio;
     public float travelSpeed;//how fast is spring moving in arbitrary units
     public Vector3 springForceVector;//how much spring force including damper in a vector
     public float springDisplacement = 0;//1-bottom out 0-fully extended
     public float brakeTorque = 0;
     float steerAngle = 0;
-    float lateralDirection = 0;//0-forward 1-reverse
     public Vector3 longtitudionalVelocity;
+    public Vector3 lateralVelocity;
 
     private void Start()
     {
@@ -60,6 +61,7 @@ public class TireBehavior : MonoBehaviour
         CalculateRelaxedRPM();
         SpringBehavior();
         LongtitudionalGrip();
+        LateralGrip();
     }
 
     void CalculateRelaxedRPM()
@@ -72,18 +74,26 @@ public class TireBehavior : MonoBehaviour
             longtitudionalVelocity = Vector3.Scale(Car.velocity, Car.transform.forward);
             wheelRelaxedRPM = (wheelRadius * 2) * Mathf.PI * longtitudionalVelocity.magnitude * 3.6f;
             wheelRADs = wheelRPM / 60 * 2 * Mathf.PI;
-            if (Vector3.Angle(Car.velocity, Car.transform.forward) > 90)
+
+            lateralVelocity = Car.velocity - longtitudionalVelocity;
+            lateralSlipRatio = lateralVelocity.magnitude;
+            //assign sign to relaxed rpm so it can be used for reverse
+            if (Vector3.Angle(Car.velocity, ForwardReference.transform.forward) > 90)
             {
-                lateralDirection = 1;
                 wheelRelaxedRPM = wheelRelaxedRPM * -1;
-                //assign sign to relaxed rpm so it can be used for reverse
             }
-            else
+
+            debugv1 = 0;
+            //assign sign to lateral slip so it can be used for reverse
+            if (Vector3.Angle(Car.velocity, ForwardReference.transform.right) > 90)
             {
-                lateralDirection = 0;
+                debugv1 = 1;
+                lateralSlipRatio = lateralSlipRatio * -1;
             }
-        //calculate the slip ratio
-        slipRatio = wheelRPM - wheelRelaxedRPM;
+
+
+            //calculate the longtitudional slip ratio
+            longtitudionalSlipRatio = wheelRPM - wheelRelaxedRPM;
         }
 
     }
@@ -106,7 +116,7 @@ public class TireBehavior : MonoBehaviour
         }
         else
         {
-            slipRatio = 0;
+            longtitudionalSlipRatio = 0;
             isGrounded = false;
             //raycast didnt hit nothing so safe to say its voided
             travelSpeed = 0;
@@ -148,17 +158,18 @@ public class TireBehavior : MonoBehaviour
         //just move the isGrounded check somewhere else later
         if (isGrounded)
         {
-            if (debugv1 == 0)
-            {
-                Car.AddForceAtPosition(gameObject.transform.up.normalized * tireData.longtitudionalGrip.Evaluate(slipRatio) * tireData.gripFactor, gameObject.transform.position, ForceMode.Force);
-            }
-            else
-            {
-                Car.AddForceAtPosition(gameObject.transform.up.normalized * tireData.longtitudionalGrip.Evaluate(slipRatio) * tireData.gripFactor, gameObject.transform.position, ForceMode.Force);
-            }
+            Car.AddForceAtPosition(gameObject.transform.up.normalized * tireData.longtitudionalGrip.Evaluate(longtitudionalSlipRatio) * tireData.gripFactor, gameObject.transform.position, ForceMode.Force);
         }
     }
+    void LateralGrip()
+    {
+        //just move the isGrounded check somewhere else later
+        if (isGrounded)
+        {
+            Car.AddForceAtPosition(gameObject.transform.right.normalized * -tireData.lateralGrip.Evaluate(lateralSlipRatio * 10) * tireData.gripFactor, gameObject.transform.position, ForceMode.Force);
 
+        }
+    }
 }
 
 [System.Serializable]
@@ -167,7 +178,7 @@ public class TireData
     public float gripFactor = 2000;
     public float maxSlip = 150f;//how much slip is allowed till it caps out
     public AnimationCurve longtitudionalGrip = new AnimationCurve(new Keyframe(-110, -0.2f), new Keyframe(-70, -1), new Keyframe(0, 0), new Keyframe(70, 1), new Keyframe(110, 0.2f));
-    public AnimationCurve lateralGrip = new AnimationCurve(new Keyframe(0, 0), new Keyframe(70, 50), new Keyframe(110, 20));
+    public AnimationCurve lateralGrip = new AnimationCurve(new Keyframe(-110, -0.2f), new Keyframe(-70, -1), new Keyframe(0, 0), new Keyframe(70, 1), new Keyframe(110, 0.2f));
 
 
 }

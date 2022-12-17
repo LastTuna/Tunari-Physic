@@ -58,11 +58,11 @@ public class CarBehaviour : MonoBehaviour
 
         if (Input.GetKey("t"))
         {
-            CarRigidbody.AddForceAtPosition(gameObject.transform.forward * 300, gameObject.transform.position, ForceMode.Force);
+            CarRigidbody.AddForceAtPosition(gameObject.transform.right * 300, gameObject.transform.position, ForceMode.Force);
         }
         if (Input.GetKey("n"))
         {
-            CarRigidbody.AddForceAtPosition(-gameObject.transform.forward * 300, gameObject.transform.position, ForceMode.Force);
+            CarRigidbody.AddForceAtPosition(-gameObject.transform.right * 300, gameObject.transform.position, ForceMode.Force);
         }
 
     }
