@@ -7,6 +7,10 @@ public class TireBehavior : MonoBehaviour
     GameObject GraphicalWheel;
     GameObject ForwardReference;//this dummy is for the forward vector reference
     //i dont know if this is useful, at least yet, but maybe in the future if i implement suspension geo
+    GameObject ContactPosTrajectory;
+    //contact pos is a game object so that i can use
+    //transform.rotateAround because i dont know how to use math
+    //to rotate vector in 3d space
     Rigidbody Car;
     public TireData tireData;
     public string wheelName = "WHEEL_";
@@ -26,11 +30,13 @@ public class TireBehavior : MonoBehaviour
 
     //readonly go below
     public bool isGrounded;//dolor
+    Vector3 contactPoint;//tire contact point
     public float wheelRelaxedRPM;//wheel's "natural" RPM, use this to calculate slip ratio later
     public float wheelRPM;//current wheel RPM
     public float wheelRADs;//current wheel RAD/sec
     public float longtitudionalSlipRatio;
-    public float lateralSlipRatio;
+    public float slipRatio;
+    public float slipAngle;
     public float travelSpeed;//how fast is spring moving in arbitrary units
     public Vector3 springForceVector;//how much spring force including damper in a vector
     public float springDisplacement = 0;//1-bottom out 0-fully extended
@@ -38,6 +44,8 @@ public class TireBehavior : MonoBehaviour
     float steerAngle = 0;
     public Vector3 longtitudionalVelocity;
     public Vector3 lateralVelocity;
+    public float currentSteerAngle;
+    public float AAAAAAAAAASSSS;
 
     private void Start()
     {
@@ -45,6 +53,7 @@ public class TireBehavior : MonoBehaviour
         GraphicalWheel = GameObject.Find(wheelName);
         Car = gameObject.GetComponentInParent<Rigidbody>();
         ForwardReference = Instantiate(new GameObject(), gameObject.transform.position, new Quaternion(0,0,0,1), Car.gameObject.transform);
+        ContactPosTrajectory = new GameObject();
     }
 
     private void Update()
@@ -58,45 +67,66 @@ public class TireBehavior : MonoBehaviour
 
     private void FixedUpdate()
     {
-        CalculateRelaxedRPM();
         SpringBehavior();
-        LongtitudionalGrip();
-        LateralGrip();
+        SlipCalc();
+        Steer();
+        
     }
 
-    void CalculateRelaxedRPM()
+    public void SlipCalc()
     {
-        //no point in calculating this if the wheel is not in contact with ground i suppose
+        ContactPosTrajectory.transform.position = contactPoint + Car.velocity;
+        ContactPosTrajectory.transform.RotateAround(contactPoint, Car.angularVelocity.normalized, Car.angularVelocity.magnitude);
+        //this gets the position delta of where the car is GOING TO BE, calculating the actual velocity and also the angular momentum
+        //obviosly this is dumb as fuck but i literaly cant into maths right now and its 6am
+
+        Vector3 direction = ContactPosTrajectory.transform.position - contactPoint;
+        
+        //calculate slip angle
+        slipAngle = Vector3.SignedAngle(gameObject.transform.up, direction, Vector3.up);
+        slipRatio = slipAngle * 0.01111111111f;//divide by 90
+        //slip ratio is how much of the total momentum is lateral and how much of it is longtitudional
+        //probably rename this to something else later
+
+        longtitudionalVelocity = direction * (1 - Mathf.Abs(slipRatio));
+        lateralVelocity = direction * Mathf.Abs(slipRatio);
+
+        //calc wheel target rpm
+        wheelRelaxedRPM = (wheelRadius * 2) * Mathf.PI * longtitudionalVelocity.magnitude * 3.6f;
+        if (slipAngle > 90 || slipAngle < -90)
+        {
+            wheelRelaxedRPM = wheelRelaxedRPM * -1;
+            //get the sign of the relaxed rpm so it also works for reverse because .magnitude always returns positive
+        }
+        wheelRADs = wheelRPM / 60 * 2 * Mathf.PI;
+
+        longtitudionalSlipRatio = wheelRPM - wheelRelaxedRPM;
+        //use the magnitude of the vector for the slip curve ref
+
         if (isGrounded)
         {
-            //calculate the tire target rpm but first you have to make sure the lateral velocity does not account for the target wheel speed
-            //because, say youre sliding sideways, the wheel longtitudional target speed would be much less because the wheel is travelling at an angle
-            longtitudionalVelocity = Vector3.Scale(Car.velocity, Car.transform.forward);
-            wheelRelaxedRPM = (wheelRadius * 2) * Mathf.PI * longtitudionalVelocity.magnitude * 3.6f;
-            wheelRADs = wheelRPM / 60 * 2 * Mathf.PI;
-
-            lateralVelocity = Car.velocity - longtitudionalVelocity;
-            lateralSlipRatio = lateralVelocity.magnitude;
-            //assign sign to relaxed rpm so it can be used for reverse
-            if (Vector3.Angle(Car.velocity, ForwardReference.transform.forward) > 90)
+            if (slipAngle < 0)
             {
-                wheelRelaxedRPM = wheelRelaxedRPM * -1;
+                Car.AddForceAtPosition(gameObject.transform.right.normalized * 100 * tireData.lateralGrip.Evaluate(lateralVelocity.magnitude), gameObject.transform.position, ForceMode.Force);
+            }
+            else
+            {
+                Car.AddForceAtPosition(-gameObject.transform.right.normalized * 100 * tireData.lateralGrip.Evaluate(lateralVelocity.magnitude), gameObject.transform.position, ForceMode.Force);
             }
 
-            debugv1 = 0;
-            //assign sign to lateral slip so it can be used for reverse
-            if (Vector3.Angle(Car.velocity, ForwardReference.transform.right) > 90)
-            {
-                debugv1 = 1;
-                lateralSlipRatio = lateralSlipRatio * -1;
-            }
+            Car.AddForceAtPosition(gameObject.transform.up.normalized * 100 * tireData.longtitudionalGrip.Evaluate(longtitudionalSlipRatio), gameObject.transform.position, ForceMode.Force);
 
-
-            //calculate the longtitudional slip ratio
-            longtitudionalSlipRatio = wheelRPM - wheelRelaxedRPM;
         }
 
+        //take rigidbody velocity add it to current wheel pos and then use that to calc slip angle wiht quternion.lookangle or was it vector3.angle
     }
+
+    public void Steer()
+    {
+        gameObject.transform.rotation = Quaternion.Euler(new Vector3(90, currentSteerAngle,0));
+
+    }
+    
 
     Vector3 SpringForce()
     {
@@ -105,6 +135,8 @@ public class TireBehavior : MonoBehaviour
         //BUT MAKE SURE TO ROTATE THE PHYSICAL DUMMY 90 DEGREES ON X!!!!!!!
         if (Physics.Raycast(gameObject.transform.position, gameObject.transform.forward.normalized, out dolor, travelRange + wheelRadius))
         {
+            contactPoint = dolor.point;
+            SlipCalc();
             isGrounded = true;
             float displacementDelta = springDisplacement;
             springDisplacement = 1 - ((dolor.distance - wheelRadius) / travelRange);
@@ -112,7 +144,7 @@ public class TireBehavior : MonoBehaviour
             float totalForce = springDisplacement * springRate * Time.fixedDeltaTime;
             totalForce += SlowDamper();
             springForceVector = -gameObject.transform.forward.normalized * totalForce;
-
+            
         }
         else
         {
@@ -159,15 +191,6 @@ public class TireBehavior : MonoBehaviour
         if (isGrounded)
         {
             Car.AddForceAtPosition(gameObject.transform.up.normalized * tireData.longtitudionalGrip.Evaluate(longtitudionalSlipRatio) * tireData.gripFactor, gameObject.transform.position, ForceMode.Force);
-        }
-    }
-    void LateralGrip()
-    {
-        //just move the isGrounded check somewhere else later
-        if (isGrounded)
-        {
-            Car.AddForceAtPosition(gameObject.transform.right.normalized * -tireData.lateralGrip.Evaluate(lateralSlipRatio * 10) * tireData.gripFactor, gameObject.transform.position, ForceMode.Force);
-
         }
     }
 }
