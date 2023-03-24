@@ -10,7 +10,8 @@ public class TireBehavior : MonoBehaviour
     //contact pos is a game object so that i can use
     //transform.rotateAround because i dont know how to use math
     //to rotate vector in 3d space
-    Rigidbody rigidbody;
+    Rigidbody rb;
+    public Vector3 angularmomentum;
     public TireData tireData;
     public string wheelName = "WHEEL_";
     public float wheelRadius = 0.33f;//NOT diameter
@@ -56,7 +57,7 @@ public class TireBehavior : MonoBehaviour
     {
         tireData = new TireData();
         GraphicalWheel = GameObject.Find(wheelName);
-        rigidbody = gameObject.GetComponentInParent<Rigidbody>();
+        rb = gameObject.GetComponentInParent<Rigidbody>();
         ContactPosTrajectory = new GameObject();
     }
 
@@ -80,6 +81,7 @@ public class TireBehavior : MonoBehaviour
         localUp = gameObject.transform.localRotation * gameObject.transform.up;
         localUp.Normalize();
 
+        angularmomentum = rb.angularVelocity;
 
         SpringBehavior();
         SlipCalc();
@@ -89,8 +91,8 @@ public class TireBehavior : MonoBehaviour
 
     public void SlipCalc()
     {
-        ContactPosTrajectory.transform.position = contactPoint + rigidbody.velocity;
-        ContactPosTrajectory.transform.RotateAround(contactPoint, rigidbody.angularVelocity.normalized, rigidbody.angularVelocity.magnitude);
+        ContactPosTrajectory.transform.position = contactPoint + rb.velocity;
+        ContactPosTrajectory.transform.RotateAround(rb.transform.position, rb.angularVelocity.normalized, rb.angularVelocity.magnitude * 10);
         //this gets the position delta of where the car is GOING TO BE, calculating the actual velocity and also the angular momentum
         //obviosly this is dumb as fuck but i literaly cant into maths right now and its 6am
 
@@ -100,7 +102,14 @@ public class TireBehavior : MonoBehaviour
         slipAngle = Vector3.SignedAngle(localForward, direction, Vector3.up);
         if(slipAngle > 90 || slipAngle < -90)
         {
-            slipRatio = (Mathf.Abs(slipAngle) - 90) * 0.01111111111f;//divide by 90
+            if(slipAngle < 0)
+            {
+                slipRatio = (180 + slipAngle) * 0.01111111111f;//divide by 90
+            }
+            else
+            {
+                slipRatio = (180 - slipAngle) * 0.01111111111f * -1;//divide by 90
+            }
         }
         else
         {
@@ -129,14 +138,14 @@ public class TireBehavior : MonoBehaviour
         {
             if (slipAngle < 0)
             {
-                rigidbody.AddForceAtPosition(localRight * 100 * tireData.lateralGrip.Evaluate(lateralVelocity.magnitude), gameObject.transform.position, ForceMode.Force);
+                rb.AddForceAtPosition(localRight * 100 * tireData.lateralGrip.Evaluate(lateralVelocity.magnitude), gameObject.transform.position, ForceMode.Force);
             }
             else
             {
-                rigidbody.AddForceAtPosition(-localRight * 100 * tireData.lateralGrip.Evaluate(lateralVelocity.magnitude), gameObject.transform.position, ForceMode.Force);
+                rb.AddForceAtPosition(-localRight * 100 * tireData.lateralGrip.Evaluate(lateralVelocity.magnitude), gameObject.transform.position, ForceMode.Force);
             }
 
-            rigidbody.AddForceAtPosition(localForward * 100 * tireData.longtitudionalGrip.Evaluate(longtitudionalSlipRatio), gameObject.transform.position, ForceMode.Force);
+            rb.AddForceAtPosition(localForward * 100 * tireData.longtitudionalGrip.Evaluate(longtitudionalSlipRatio), gameObject.transform.position, ForceMode.Force);
 
         }
 
@@ -182,7 +191,7 @@ public class TireBehavior : MonoBehaviour
     //applies spring force to car.
     void SpringBehavior()
     {
-        rigidbody.AddForceAtPosition(SpringForce(), gameObject.transform.position, ForceMode.Force);
+        rb.AddForceAtPosition(SpringForce(), gameObject.transform.position, ForceMode.Force);
     }
     
     //slow damper calculation
