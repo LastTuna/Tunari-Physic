@@ -5,13 +5,12 @@ using UnityEngine;
 public class TireBehavior : MonoBehaviour
 {
     GameObject GraphicalWheel;
-    GameObject ForwardReference;//this dummy is for the forward vector reference
     //i dont know if this is useful, at least yet, but maybe in the future if i implement suspension geo
     GameObject ContactPosTrajectory;
     //contact pos is a game object so that i can use
     //transform.rotateAround because i dont know how to use math
     //to rotate vector in 3d space
-    Rigidbody Car;
+    Rigidbody rigidbody;
     public TireData tireData;
     public string wheelName = "WHEEL_";
     public float wheelRadius = 0.33f;//NOT diameter
@@ -47,19 +46,24 @@ public class TireBehavior : MonoBehaviour
     public float currentSteerAngle;
     public float AAAAAAAAAASSSS;
 
+
+    public Vector3 localForward;
+    public Vector3 localRight;
+    public Vector3 localUp;
+
+
     private void Start()
     {
         tireData = new TireData();
         GraphicalWheel = GameObject.Find(wheelName);
-        Car = gameObject.GetComponentInParent<Rigidbody>();
-        ForwardReference = Instantiate(new GameObject(), gameObject.transform.position, new Quaternion(0,0,0,1), Car.gameObject.transform);
+        rigidbody = gameObject.GetComponentInParent<Rigidbody>();
         ContactPosTrajectory = new GameObject();
     }
 
     private void Update()
     {
         Vector3 graphicsPos = gameObject.transform.position;
-        graphicsPos += gameObject.transform.forward.normalized * ((travelRange * (1 - springDisplacement)) - wheelRadius);
+        graphicsPos += (-localUp) * ((travelRange * (1 - springDisplacement)) - wheelRadius);
         GraphicalWheel.transform.position = graphicsPos;
         GraphicalWheel.transform.localEulerAngles = new Vector3(GraphicalWheel.transform.localEulerAngles.x, steerAngle - GraphicalWheel.transform.localEulerAngles.z, GraphicalWheel.transform.localEulerAngles.z);
         GraphicalWheel.transform.Rotate(wheelRADs * 360 * Time.deltaTime, 0, 0);
@@ -67,6 +71,16 @@ public class TireBehavior : MonoBehaviour
 
     private void FixedUpdate()
     {
+        localForward = gameObject.transform.localRotation * gameObject.transform.forward;
+        localForward.Normalize();
+
+        localRight = gameObject.transform.localRotation * gameObject.transform.right;
+        localRight.Normalize();
+
+        localUp = gameObject.transform.localRotation * gameObject.transform.up;
+        localUp.Normalize();
+
+
         SpringBehavior();
         SlipCalc();
         Steer();
@@ -75,16 +89,24 @@ public class TireBehavior : MonoBehaviour
 
     public void SlipCalc()
     {
-        ContactPosTrajectory.transform.position = contactPoint + Car.velocity;
-        ContactPosTrajectory.transform.RotateAround(contactPoint, Car.angularVelocity.normalized, Car.angularVelocity.magnitude);
+        ContactPosTrajectory.transform.position = contactPoint + rigidbody.velocity;
+        ContactPosTrajectory.transform.RotateAround(contactPoint, rigidbody.angularVelocity.normalized, rigidbody.angularVelocity.magnitude);
         //this gets the position delta of where the car is GOING TO BE, calculating the actual velocity and also the angular momentum
         //obviosly this is dumb as fuck but i literaly cant into maths right now and its 6am
 
         Vector3 direction = ContactPosTrajectory.transform.position - contactPoint;
-        
+      
         //calculate slip angle
-        slipAngle = Vector3.SignedAngle(gameObject.transform.up, direction, Vector3.up);
-        slipRatio = slipAngle * 0.01111111111f;//divide by 90
+        slipAngle = Vector3.SignedAngle(localForward, direction, Vector3.up);
+        if(slipAngle > 90 || slipAngle < -90)
+        {
+            slipRatio = (Mathf.Abs(slipAngle) - 90) * 0.01111111111f;//divide by 90
+        }
+        else
+        {
+            slipRatio = slipAngle * 0.01111111111f;//divide by 90
+        }
+        
         //slip ratio is how much of the total momentum is lateral and how much of it is longtitudional
         //probably rename this to something else later
 
@@ -107,14 +129,14 @@ public class TireBehavior : MonoBehaviour
         {
             if (slipAngle < 0)
             {
-                Car.AddForceAtPosition(gameObject.transform.right.normalized * 100 * tireData.lateralGrip.Evaluate(lateralVelocity.magnitude), gameObject.transform.position, ForceMode.Force);
+                rigidbody.AddForceAtPosition(localRight * 100 * tireData.lateralGrip.Evaluate(lateralVelocity.magnitude), gameObject.transform.position, ForceMode.Force);
             }
             else
             {
-                Car.AddForceAtPosition(-gameObject.transform.right.normalized * 100 * tireData.lateralGrip.Evaluate(lateralVelocity.magnitude), gameObject.transform.position, ForceMode.Force);
+                rigidbody.AddForceAtPosition(-localRight * 100 * tireData.lateralGrip.Evaluate(lateralVelocity.magnitude), gameObject.transform.position, ForceMode.Force);
             }
 
-            Car.AddForceAtPosition(gameObject.transform.up.normalized * 100 * tireData.longtitudionalGrip.Evaluate(longtitudionalSlipRatio), gameObject.transform.position, ForceMode.Force);
+            rigidbody.AddForceAtPosition(localForward * 100 * tireData.longtitudionalGrip.Evaluate(longtitudionalSlipRatio), gameObject.transform.position, ForceMode.Force);
 
         }
 
@@ -123,7 +145,6 @@ public class TireBehavior : MonoBehaviour
 
     public void Steer()
     {
-        gameObject.transform.rotation = Quaternion.Euler(new Vector3(90, currentSteerAngle,0));
 
     }
     
@@ -133,17 +154,16 @@ public class TireBehavior : MonoBehaviour
         RaycastHit dolor;
         //use transform.forward to get the tangent for the wheel..
         //BUT MAKE SURE TO ROTATE THE PHYSICAL DUMMY 90 DEGREES ON X!!!!!!!
-        if (Physics.Raycast(gameObject.transform.position, gameObject.transform.forward.normalized, out dolor, travelRange + wheelRadius))
+        if (Physics.Raycast(gameObject.transform.position, -localUp, out dolor, travelRange + wheelRadius))
         {
             contactPoint = dolor.point;
-            SlipCalc();
             isGrounded = true;
             float displacementDelta = springDisplacement;
             springDisplacement = 1 - ((dolor.distance - wheelRadius) / travelRange);
             travelSpeed = (springDisplacement - displacementDelta) * travelRange;
             float totalForce = springDisplacement * springRate * Time.fixedDeltaTime;
             totalForce += SlowDamper();
-            springForceVector = -gameObject.transform.forward.normalized * totalForce;
+            springForceVector = localUp * totalForce;
             
         }
         else
@@ -162,7 +182,7 @@ public class TireBehavior : MonoBehaviour
     //applies spring force to car.
     void SpringBehavior()
     {
-        Car.AddForceAtPosition(SpringForce(), gameObject.transform.position, ForceMode.Force);
+        rigidbody.AddForceAtPosition(SpringForce(), gameObject.transform.position, ForceMode.Force);
     }
     
     //slow damper calculation
@@ -185,14 +205,6 @@ public class TireBehavior : MonoBehaviour
         return 0;
     }
 
-    void LongtitudionalGrip()
-    {
-        //just move the isGrounded check somewhere else later
-        if (isGrounded)
-        {
-            Car.AddForceAtPosition(gameObject.transform.up.normalized * tireData.longtitudionalGrip.Evaluate(longtitudionalSlipRatio) * tireData.gripFactor, gameObject.transform.position, ForceMode.Force);
-        }
-    }
 }
 
 [System.Serializable]
